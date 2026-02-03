@@ -1,4 +1,4 @@
-This is a module that utilizes the FullControl 0.1.2 library (details below) to enable 3D printer motion when extrusion is not desired. This was created for my BYU ME 497R class.
+This is a module that utilizes the FullControl 0.1.2 library (details below) to enable 3D printer motion when extrusion is not desired. This was created for my BYU ME 497R class. It also simplifies and automates file viewing (saved interactive HTML viewables) and file saving (record keeping, autosave to SD card).
 
 Comments in Demo and Calibration.py code will be helpful. Both these files are created to run on an ender_3 printer. a custom printer needs to be added to a file inside your fullcontrol package (file details below).
 

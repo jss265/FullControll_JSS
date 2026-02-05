@@ -32,7 +32,7 @@ printer = 'ender_3_custom'  # printer options: generic, ultimaker2plus, prusa_i3
 #               You are ready to run your gcode
 
 printer_limits_xyz = [220, 220, 100]  # Limit adjusted for custom nozzle. ender_3 origional limit was 250
-printer_offset = [19.8+20, 4.9+20, 4.8]  # Datum defined here is the winder taped on the bed
+printer_offset = [19.8, 4.9, 4.8]  # Origin is bed corner
 print_settings = {'extrusion_width': 0.5,'extrusion_height': 0.2, 'nozzle_temp': 0, 'bed_temp': 0, 'fan_percent': 0}  # toggle off fan, bed_temp, nozzle_temp, and arbitrary values for extrusion height/width
 start_code = [ManualGcode(text=f"""
 G90
@@ -52,21 +52,84 @@ VF, F, M, S, VS, SS = jss.SPEED1, jss.SPEED2, jss.SPEED3, jss.SPEED4, jss.SPEED5
 
 # ---------------- Design ----------------
 
-# -- Design Vars --
-nre = 6.31 + 1  # nozzle radius + margin of error
+# -- Design Defs --
+h = 28.25  # height of the winder surface TODO need to verify
+w = 59  # width of main base
+lw = 2.5  # length from h to webbing 
+ln = None  # length from h to nail roof TODO get this val
+lf = 8.6  # length from inner to outer finger
+le = 5.9  # length between sets of fingers
+me = 1  # standard margin of error
+nre = 6.31 + 1  # nozzle radius + a margin of error
 f = 10.3  # finger length to edge
+
+datum = [20, 20]
+
+def wrap_around_finger(steps, finger_num):
+    A = B = C = D = E = G = []  # don't use F (fast)
+
+    if finger_num in [1, 2, 3, 4]: group = 'x'
+    elif finger_num in [5, 6, 7, 8]: group = 'y+'
+    elif finger_num in [9, 10, 11, 12]: group = 'x+'
+    elif finger_num in [13, 14, 15, 16]: group = 'y'
+    else: raise ValueError(f'got {finger_num}, expected 1-32')
+
+    n = (finger_num - 1) % 4
+    if group == 'x':
+        Ax = Bx = Cx = datum[0] + lf + le/2 + n*(lf+le)
+        Dx = Ex = Gx = datum[0] + lf + le/2 + (n-1)*(lf+le)
+        Ay = By = Ey = Gy = datum[1]-nre
+        Cy = Dy = datum[1]-nre-f
+    elif group == 'y+':
+        Ax = Bx = Ex = Gx = datum[0]+w+nre
+        Cx = Dx = datum[0]+w+nre+f
+        Ay = By = Cy = datum[1] + lf + le/2 + n*(lf+le)
+        Dy = Ey = Gy = datum[1] + lf + le/2 + (n-1)*(lf+le)
+    elif group == 'x+':
+        Ax = Bx = Cx = datum[0] + w - lf - le/2 - n*(lf+le)
+        Dx = Ex = Gx = datum[0] + w - lf - le/2 - (n-1)*(lf+le)
+        Ay = By = Ey = Gy = datum[1]+w+nre        
+        Cy = Dy = datum[1]+w+nre+f        
+    elif group == 'y':
+        Ax = Bx = Ex = Gx = datum[0]-nre
+        Cx = Dx = datum[0]-nre-f
+        Ay = By = Cy = datum[1] + w - lf - le/2 - n*(lf+le)
+        Dy = Ey = Gy = datum[1] + w - lf - le/2 - (n-1)*(lf+le)
+
+    else: raise ValueError('around_finger error. Unknown cause')
+
+    A = [Ax, Ay, h+me]
+    B = [Bx, By, h-lw]
+    C = [Cx, Cy, h-lw]
+    D = [Dx, Dy, h-lw]
+    E = [Ex, Ey, h-lw]
+    G = [Gx, Gy, h+me]
+    
+    jss.move_in_line(steps, *A, VF)  # to spot
+    jss.move_in_line(steps, *B, S)  # down
+    jss.move_in_line(steps, *C, F)
+    jss.move_in_line(steps, *D, M)  # around
+    jss.move_in_line(steps, *E, F)
+    jss.move_in_line(steps, *G, M)  # up
+    
 # -- ----------- --
 
 steps = []
 
+jss.move_in_line(steps, 0,0,0,VF)  # first move
+jss.move_in_line(steps, 0,0,h+5,VF)  # clearance
+jss.move_in_line(steps, *datum, h, VF)  # over to origin
 jss.custom_line(steps, 'G4 S10')  # Pause to visually verify that nozzle is in the right place
 
-jss.move_in_line(steps, 0, -20, 10, VF)
-
-jss.move_in_line(steps, 0,0,50,VF)  # Get high enought to wire up winder
+jss.move_in_line(steps, *datum,h+25,VF)  # Get high enought to wire up winder
 jss.custom_line(steps, 'G4 S60')  # Pause to get wire tied up
 
+for finger_num in range(1,17):
+    wrap_around_finger(steps, finger_num)
 
+jss.move_in_line(steps, *datum, h+me, VF)
+
+jss.custom_line(steps, 'G4 S10')  # pause for satisfaction
 
 # ---------------- Visualize / Compile ----------------
 if output_html:

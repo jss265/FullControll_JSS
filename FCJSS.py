@@ -282,8 +282,6 @@ def save_html(steps, html_filename="fc_plot.html", embed=True):
 
     print(f"Saved FullControl HTML plot to: {out_path.resolve()}")
 
-import re
-
 def check_gcode_bounds(gcode_path: Path, limits_xyz):
     """
     Checks that ABSOLUTION MOTIONS G0, G1, G2, G3, do not exceed limits.
@@ -322,4 +320,4 @@ def check_gcode_bounds(gcode_path: Path, limits_xyz):
                 if x < 0 or x > max_x or y < 0 or y > max_y or z < 0 or z > max_z:
                     errors.append((line_num, line, (x, y, z)))
 
-    return errors  # line_num, line, pos
+    return errors  # [[line_num, line, pos]]

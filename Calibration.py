@@ -32,7 +32,7 @@ printer = 'ender_3_custom'  # printer options: generic, ultimaker2plus, prusa_i3
 #               You are ready to run your gcode
 
 printer_limits_xyz = [220, 220, 100]  # Limit adjusted for custom nozzle. ender_3 origional limit was 250
-printer_offset = [19.8, 4.9]  #
+printer_offset = [19.8, 4.9, 4.8]  # Printer offset. Z is opposite X and Y. Take a moment to think about which direction it should go, knowning the nozzle will be off to the left, in front of, and above the bed corner.
 print_settings = {'extrusion_width': 0.5,'extrusion_height': 0.2, 'nozzle_temp': 0, 'bed_temp': 0, 'fan_percent': 0}  # toggle off fan, bed_temp, nozzle_temp, and arbitrary values for extrusion height/width
 start_code = [ManualGcode(text=f"""
 G90
@@ -41,7 +41,7 @@ M83
 M104 S0
 M106 S0
 M140 S0
-G92 X0 Y0 Z4.80
+G92 X0 Y0 Z{printer_offset[2]}
 G0 F1500 X{printer_offset[0]} Y{printer_offset[1]} Z0
 G92 X0 Y0 Z0
 """)]  # this removes non-necessary starting routine, and potentially catastrophic homing sequence. Z offset necessary.

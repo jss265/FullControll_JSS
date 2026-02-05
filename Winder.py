@@ -7,9 +7,9 @@ output_html = True
 output_gcode_to_file = True
 output_gcode_to_microSD = True
 
-hmtl_filename = 'hmtl/fc_plot_Winder'  # folder/name w/o extension
-gcode_filename = 'gcode/fc_gcode_Winder'  # folder/name w/o extension
-gcode_filename_SD = 'D:/fc_gcode_Winder'  # folder/name w/o extension
+hmtl_filename = 'hmtl/Winder'  # folder/name w/o extension
+gcode_filename = 'gcode/Winder'  # folder/name w/o extension
+gcode_filename_SD = 'D:/Winder'  # folder/name w/o extension
 
 
 # ---------------- Printer Settings ----------------
@@ -63,11 +63,14 @@ steps = []
 jss.move_in_line(steps, 0,0,0,VF)  # first move
 jss.move_in_line(steps, 0,0,10, VF)  # up
 jss.move_in_line(steps, winder_offset_x, 0, 0, VF)  # find corner of 
-jss.custom_line(steps, 'G92 X0 Y0 Z0')
+jss.custom_line(steps, 'G92 X0 Y0 Z0')  # redefine the origin
 
 jss.custom_line(steps, 'G4 S10')  # Pause to visually verify that nozzle is in the right place
+
+jss.move_in_line(steps, 0, -20, 10, VF)
+
 jss.move_in_line(steps, 0,0,50,VF)  # Get high enought to wire up winder
-# jss.custom_line(steps, 'G4 S60')  # Pause to get wire tied up
+jss.custom_line(steps, 'G4 S60')  # Pause to get wire tied up
 
 
 

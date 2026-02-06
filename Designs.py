@@ -61,5 +61,5 @@ def WIND_1_THRU_4():
 
 if __name__ == '__main__':
     
-    FINGERS_TEST()
+    # FINGERS_TEST()
     WIND_1_THRU_4()

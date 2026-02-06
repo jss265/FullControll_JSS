@@ -138,7 +138,7 @@ def wind_chore(steps, core_num, angle):
     x = datum[0] + en + nx*nn
     y = datum[1] + en + ny*nn
 
-    jss.multi_pass_wind(steps, x, y, h, nn/2, p, ln, None, 100, F, 'ccw', angle, 10, 0, False)
+    jss.multi_pass_wind(steps, x, y, h, nn/2, p, ln, None, 100, F, 'ccw', angle, 1, 0, False)
 
     return x, y
     

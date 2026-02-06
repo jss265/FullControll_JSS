@@ -20,7 +20,7 @@ def FINGERS_TEST():
     jss.custom_line(steps, 'G4 S10')  # Pause to visually verify that nozzle is in the right place
 
     for finger_num in range(1,17):
-        wrap_around_finger(steps, finger_num)
+        wrap_around_finger(steps, finger_num, VF)
 
     jss.move_in_line(steps, *datum, h+me, VF)
 
@@ -48,7 +48,7 @@ def WIND_1_THRU_4():
 
     for num in range(1, 5):
         wind_chore(steps, num, 'x')
-        wrap_around_finger(steps, num)
+        wrap_around_finger(steps, num, VF)
 
     jss.move_in_line(steps, *datum, h+me, VF)
 
@@ -60,6 +60,6 @@ def WIND_1_THRU_4():
 # -------------------- MAIN --------------------
 
 if __name__ == '__main__':
-    # run these designs
+    
     FINGERS_TEST()
     WIND_1_THRU_4()

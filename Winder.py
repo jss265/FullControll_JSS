@@ -64,12 +64,18 @@ nn = 13  # length from nail to nail
 me = 1  # standard margin of error
 nre = 2 + 1  # nozzle radius + a margin of error
 f = 10.3  # finger length to edge
-nr = 1.1  # radius of the nail
 p = 0.102 + 0.001  # diamter of wire + a marigin of error
 
 datum = [20, 20]
 
-def wrap_around_finger(steps, finger_num):
+def wrap_around_finger(steps, finger_num, speed):
+    """
+    Wraps wire around pair of fingers.
+    
+    :param steps: list of steps to append
+    :param finger_num: location of fingers to wrap
+    :param speed: speed of travel from current position to begining of the wrap
+    """
     A = B = C = D = E = G = []  # don't use F (fast)
 
     if finger_num in [1, 2, 3, 4]: group = 'x'
@@ -109,7 +115,7 @@ def wrap_around_finger(steps, finger_num):
     E = [Ex, Ey, h-lw]
     G = [Gx, Gy, h+me]
     
-    jss.move_in_line(steps, *A, VF)  # to spot
+    jss.move_in_line(steps, *A, speed)  # to spot
     jss.move_in_line(steps, *B, S)  # down
     jss.move_in_line(steps, *C, F)
     jss.move_in_line(steps, *D, M)  # around
@@ -117,15 +123,22 @@ def wrap_around_finger(steps, finger_num):
     jss.move_in_line(steps, *G, M)  # up
     
 def wind_chore(steps, core_num, angle):
+    '''
+    Wind wire around a core.
+    
+    :param steps: list of steps to append
+    :param core_num: location of core to wind
+    :param angle: represent both start and end position relative to the core (deg OR 'x', 'x+', 'y', 'y+')
+    '''
     n = core_num - 1
 
-    nx = n // 4
-    ny = n % 4
+    nx = n % 4
+    ny = n // 4
 
-    x = datum[0] + nx*nn
-    y = datum[1] + ny*nn
+    x = datum[0] + en + nx*nn
+    y = datum[1] + en + ny*nn
 
-    jss.multi_pass_wind(steps, x, y, h, nr+nn/2, p, ln, None, 100, F, 'ccw', angle, 10, 0, False)
+    jss.multi_pass_wind(steps, x, y, h, nn/2, p, ln, None, 100, F, 'ccw', angle, 10, 0, False)
 
     return x, y
     

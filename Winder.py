@@ -3,9 +3,9 @@ from fullcontrol.gcode import ManualGcode
 import FCJSS as jss
 
 # ---------------- Doc Settings ----------------
-output_html = True
-output_gcode_to_file = True
-output_gcode_to_microSD = True
+output_html = False
+output_gcode_to_file = False
+output_gcode_to_microSD = False
 
 hmtl_filename = 'hmtl/Winder'  # folder/name w/o extension
 gcode_filename = 'gcode/Winder'  # folder/name w/o extension
@@ -64,7 +64,8 @@ nn = 13  # length from nail to nail
 me = 1  # standard margin of error
 nre = 2 + 1  # nozzle radius + a margin of error
 f = 10.3  # finger length to edge
-nd = 1.1  # radius of the nail
+nr = 1.1  # radius of the nail
+p = 0.102 + 0.001  # diamter of wire + a marigin of error
 
 datum = [20, 20]
 
@@ -115,66 +116,62 @@ def wrap_around_finger(steps, finger_num):
     jss.move_in_line(steps, *E, F)
     jss.move_in_line(steps, *G, M)  # up
     
-# -- ----------- --
+def wind_chore(steps, core_num, angle):
+    n = core_num - 1
 
-steps = []
+    nx = n // 4
+    ny = n % 4
 
-jss.move_in_line(steps, 0,0,0,VF)  # first move
-jss.move_in_line(steps, 0,0,h+5,VF)  # clearance
-jss.move_in_line(steps, *datum, h, VF)  # over to origin
-jss.custom_line(steps, 'G4 S10')  # Pause to visually verify that nozzle is in the right place
+    x = datum[0] + nx*nn
+    y = datum[1] + ny*nn
 
-jss.move_in_line(steps, *datum,h+25,VF)  # Get high enought to wire up winder
-jss.custom_line(steps, 'G4 S60')  # Pause to get wire tied up
+    jss.multi_pass_wind(steps, x, y, h, nr+nn/2, p, ln, None, 100, F, 'ccw', angle, 10, 0, False)
 
-for finger_num in range(1,17):
-    wrap_around_finger(steps, finger_num)
-
-jss.move_in_line(steps, *datum, h+me, VF)
-
-jss.custom_line(steps, 'G4 S10')  # pause for satisfaction
+    return x, y
+    
 
 # ---------------- Visualize / Compile ----------------
-if output_html:
-    steps_for_html = [s for s in steps if not isinstance(s, ManualGcode)]
-    jss.save_html(steps_for_html, html_filename=hmtl_filename)
+def VISUALIZE_AND_COMPILE(steps):
+    if output_html:
+        steps_for_html = [s for s in steps if not isinstance(s, ManualGcode)]
+        jss.save_html(steps_for_html, html_filename=hmtl_filename)
 
 
-if output_gcode_to_file:
-    jss.save_gcode(
-        steps,
-        printer,
-        gcode_filename,
-        print_settings,
-        user_overrides={
-            "starting_procedure_steps": start_code,
-            "ending_procedure_steps": end_code,
-            "material_flow_percent": 0,
-            "manual_e_ratio": 0,
-            "primer": "no_primer"
-            }
+    if output_gcode_to_file:
+        jss.save_gcode(
+            steps,
+            printer,
+            gcode_filename,
+            print_settings,
+            user_overrides={
+                "starting_procedure_steps": start_code,
+                "ending_procedure_steps": end_code,
+                "material_flow_percent": 0,
+                "manual_e_ratio": 0,
+                "primer": "no_primer"
+                }
+            )
+
+    if output_gcode_to_microSD:
+        jss.save_gcode(
+            steps,
+            printer,
+            gcode_filename_SD,
+            print_settings,
+            user_overrides={
+                "starting_procedure_steps": start_code,
+                "ending_procedure_steps": end_code,
+                "material_flow_percent": 0,
+                "manual_e_ratio": 0,
+                "primer": "no_primer"
+                } 
         )
 
-if output_gcode_to_microSD:
-    jss.save_gcode(
-        steps,
-        printer,
-        gcode_filename_SD,
-        print_settings,
-        user_overrides={
-            "starting_procedure_steps": start_code,
-            "ending_procedure_steps": end_code,
-            "material_flow_percent": 0,
-            "manual_e_ratio": 0,
-            "primer": "no_primer"
-            } 
-    )
+    if output_gcode_to_file or output_gcode_to_microSD:
+        errors = jss.check_gcode_bounds(gcode_filename, printer_limits_xyz)
 
-if output_gcode_to_file or output_gcode_to_microSD:
-    errors = jss.check_gcode_bounds(gcode_filename, printer_limits_xyz)
-
-    if errors:
-        for line_num, line, pos in errors:
-            print(f"Out of bounds at line {line_num}: {line} -> {pos}")
-    else:
-        print("All moves within bounds.")
+        if errors:
+            for line_num, line, pos in errors:
+                print(f"Out of bounds at line {line_num}: {line} -> {pos}")
+        else:
+            print("All moves within bounds.")

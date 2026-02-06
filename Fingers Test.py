@@ -32,7 +32,7 @@ printer = 'ender_3_custom'  # printer options: generic, ultimaker2plus, prusa_i3
 #               You are ready to run your gcode
 
 printer_limits_xyz = [220, 220, 100]  # Limit adjusted for custom nozzle. ender_3 origional limit was 250
-printer_offset = [19.8, 4.9, 4.8]  # Origin is bed corner
+printer_offset = [19.8, 4.9, 4.8]  # Origin is bed corner TODO get new nozzle datum
 print_settings = {'extrusion_width': 0.5,'extrusion_height': 0.2, 'nozzle_temp': 0, 'bed_temp': 0, 'fan_percent': 0}  # toggle off fan, bed_temp, nozzle_temp, and arbitrary values for extrusion height/width
 start_code = [ManualGcode(text=f"""
 G90
@@ -53,15 +53,18 @@ VF, F, M, S, VS, SS = jss.SPEED1, jss.SPEED2, jss.SPEED3, jss.SPEED4, jss.SPEED5
 # ---------------- Design ----------------
 
 # -- Design Defs --
-h = 28.25  # height of the winder surface TODO need to verify
+h = 28.25  # height of the winder surface
 w = 59  # width of main base
 lw = 2.5  # length from h to webbing 
-ln = None  # length from h to nail roof TODO get this val
+ln = 5.5 - .2  # length from h to nail roof - a margin of error TODO verify this val
 lf = 8.6  # length from inner to outer finger
 le = 5.9  # length between sets of fingers
+en = 10  # length from edge to nail
+nn = 13  # length from nail to nail
 me = 1  # standard margin of error
-nre = 6.31 + 1  # nozzle radius + a margin of error
+nre = 2 + 1  # nozzle radius + a margin of error
 f = 10.3  # finger length to edge
+nd = 1.1  # radius of the nail
 
 datum = [20, 20]
 

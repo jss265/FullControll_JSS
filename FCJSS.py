@@ -129,17 +129,20 @@ def wind_helix(
     dtheta = direction * 2 * math.pi / points_per_turn  # angle increment per point
 
     z = start_z
+    final_x, final_y = 0, 0
     for i in range(total_points + 1):
         theta = i * dtheta + (start_angle * math.pi / 180)  # apply start_angle offset here
-        x = center_x + radius * math.cos(theta)
-        y = center_y + radius * math.sin(theta)
+        final_x = center_x + radius * math.cos(theta)
+        final_y = center_y + radius * math.sin(theta)
 
-        move_in_line(steps, x, y, z, speed)
+        move_in_line(steps, final_x, final_y, z, speed)
         z += dz
     
     if print_report:
         total_windings = int(turns)
         print(f'{total_windings} windings wound at {center_x}, {center_y}, {start_z}')
+    
+    return final_x, final_y, z
 
 def multi_pass_wind(
     steps: List,
@@ -177,19 +180,43 @@ def multi_pass_wind(
     :param passes: number of passes
     :param spacing: radial distance to increase radius for each pass
     :param start_down: if True, first pass goes downward
-    :return: (x, y, z) final position of the wind
+    :return: ((start_x, start_y, start_z), (final_x, final_y, final_z)) start and final positions
     """
     direction_multiplier = -1 if start_down else 1
     current_radius = start_radius
     current_z = start_z
 
     total_turns = turns if turns is not None else int(abs(height / pitch))
+    
+    # Convert start_angle to radians for position calculations
+    if isinstance(start_angle, str):
+        if start_angle.lower() == 'x':
+            angle_deg = 270
+        elif start_angle.lower() == 'x+':
+            angle_deg = 90
+        elif start_angle.lower() == 'y':
+            angle_deg = 180
+        elif start_angle.lower() == 'y+':
+            angle_deg = 0
+        else:
+            raise ValueError("Invalid start_angle string. Use 'x', 'x+', 'y', 'y+' or degrees.")
+    else:
+        angle_deg = start_angle
+    
+    angle_rad = angle_deg * math.pi / 180
+    
+    # Calculate start position
+    start_x = center_x + start_radius * math.cos(angle_rad)
+    start_y = center_y + start_radius * math.sin(angle_rad)
+    start_z = current_z
+
+    final_x, final_y, final_z = start_x, start_y, start_z
 
     for i in range(passes):
         # flip pitch according to direction_multiplier
         helix_height = height * direction_multiplier if turns is None else abs(turns * pitch) * direction_multiplier
 
-        wind_helix(
+        final_x, final_y, final_z = wind_helix(
             steps,
             center_x=center_x,
             center_y=center_y,
@@ -212,32 +239,7 @@ def multi_pass_wind(
     total_windings = total_turns * passes
     print(f'{total_windings} windings wound at {center_x}, {center_y}, {start_z}')
     
-    # Calculate final position
-    # The final radius after all passes (before last increment in loop)
-    final_radius = start_radius + spacing * (passes - 1)
-    
-    # Convert start_angle to radians
-    if isinstance(start_angle, str):
-        if start_angle.lower() == 'x':
-            angle_deg = 270
-        elif start_angle.lower() == 'x+':
-            angle_deg = 90
-        elif start_angle.lower() == 'y':
-            angle_deg = 180
-        elif start_angle.lower() == 'y+':
-            angle_deg = 0
-        else:
-            raise ValueError("Invalid start_angle string. Use 'x', 'x+', 'y', 'y+' or degrees.")
-    else:
-        angle_deg = start_angle
-    
-    angle_rad = angle_deg * math.pi / 180
-    
-    # Calculate final x, y position based on final radius and angle
-    final_x = center_x + final_radius * math.cos(angle_rad)
-    final_y = center_y + final_radius * math.sin(angle_rad)
-    
-    return final_x, final_y, current_z
+    return (start_x, start_y, start_z), (final_x, final_y, final_z)
 
 def save_gcode(steps, printer, gcode_filename, print_settings, user_overrides):
     """

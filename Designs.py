@@ -52,13 +52,14 @@ def WIND_1_THRU_4():
     jss.move_in_line(steps, *datum,h+25,VF)  # Get high enought to wire up winder
     jss.pause(steps, 30)  # Pause to get wire tied up
 
-    for num in range(1, 5):
-        wind_chore(steps, num, 'x')
-        x, y, z = wrap_around_finger(steps, num, VF)
-        jss.move_in_line(steps, x, y, z+10, M)
-        jss.pause(steps, 4)
+    for num in range(1, 2):
+        start, final = wind_chore(steps, num, 'x')  # wind core
+        print(start, final)
+        jss.move_in_line(steps, final[0], final[1], final[2]+10, M)  # move up and out of the way
+        jss.move_in_line(steps, start[0], start[1], start[2]+10, VF)  # line up for figer wrap
+        # x, y, z = wrap_around_finger(steps, num, VF)  # wrap fingers
 
-    jss.move_in_line(steps, *datum, h+me, VF)
+    # jss.move_in_line(steps, *datum, h+me, VF)
 
     jss.custom_line(steps, 'G4 S10')  # pause for satisfaction
 

@@ -76,6 +76,7 @@ def wrap_around_finger(steps, finger_num, speed):
     :param steps: list of steps to append
     :param finger_num: location of fingers to wrap
     :param speed: speed of travel from current position to begining of the wrap
+    :return: (x, y, z) final position
     """
     A = B = C = D = E = G = []  # don't use F (fast)
 
@@ -123,6 +124,8 @@ def wrap_around_finger(steps, finger_num, speed):
     jss.move_in_line(steps, *E, F)
     jss.move_in_line(steps, *G, M)  # up
     
+    return Gx, Gy, h+me
+    
 def wind_chore(steps, core_num, angle):
     '''
     Wind wire around a core.
@@ -130,6 +133,7 @@ def wind_chore(steps, core_num, angle):
     :param steps: list of steps to append
     :param core_num: location of core to wind
     :param angle: represent both start and end position relative to the core (deg OR 'x', 'x+', 'y', 'y+')
+    :return: ((start_x, start_y, start_z), (final_x, final_y, final_z)) start and final positions
     '''
     n = core_num - 1
 
@@ -139,9 +143,9 @@ def wind_chore(steps, core_num, angle):
     x = datum[0] + en + nx*nn
     y = datum[1] + en + ny*nn
 
-    jss.multi_pass_wind(steps, x, y, h, nn/2, p, ln, None, 100, F, 'ccw', angle, 1, 0, False)
+    start_pos, final_pos = jss.multi_pass_wind(steps, x, y, h, nn/2, p, ln, None, 100, F, 'ccw', angle, 1, 0, False)
 
-    return x, y
+    return start_pos, final_pos
     
 
 # ---------------- Visualize / Compile ----------------

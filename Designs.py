@@ -4,12 +4,31 @@ import FCJSS as jss
 from Winder import *
 import Winder  
 
+def TEST_DATUM():
+    global output_html, output_gcode_to_microSD, output_gcode_to_file, animate, hmtl_filename, gcode_filename, gcode_filename_SD
+    Winder.output_html = True
+    Winder.output_gcode_to_file = True
+    Winder.output_gcode_to_microSD = True
+    Winder.animate = False
+
+    Winder.hmtl_filename = 'hmtl/Test_Datum'
+    Winder.gcode_filename = 'gcode/Test_Datum'
+    Winder.gcode_filename_SD = 'D:/Test_Datum'
+
+    steps = []
+
+    jss.move_in_line(steps, 0, 0, 0, VF)
+    jss.pause(steps, 5)
+    jss.move_in_line(steps, 0, 0, 1, VF)
+
+    VISUALIZE_AND_COMPILE(steps, Winder.animate)
+
 def FINGERS_TEST():
     global output_html, output_gcode_to_microSD, output_gcode_to_file, animate, hmtl_filename, gcode_filename, gcode_filename_SD
     Winder.output_html = True
     Winder.output_gcode_to_file = True
-    Winder.output_gcode_to_microSD = False
-    Winder.animate = True
+    Winder.output_gcode_to_microSD = True
+    Winder.animate = False
 
     Winder.hmtl_filename = 'hmtl/Finger_Test'
     Winder.gcode_filename = 'gcode/Finger_Test'
@@ -35,7 +54,7 @@ def WIND_1_THRU_4():
     global output_html, output_gcode_to_microSD, output_gcode_to_file, animate, hmtl_filename, gcode_filename, gcode_filename_SD
     Winder.output_html = True
     Winder.output_gcode_to_file = True
-    Winder.output_gcode_to_microSD = False
+    Winder.output_gcode_to_microSD = True
     Winder.animate = False
 
     Winder.hmtl_filename = 'hmtl/Wind_1-4'
@@ -50,16 +69,15 @@ def WIND_1_THRU_4():
     jss.pause(steps, 4)  # Pause to visually verify that nozzle is in the right place
 
     jss.move_in_line(steps, *datum,h+25,VF)  # Get high enought to wire up winder
-    jss.pause(steps, 30)  # Pause to get wire tied up
+    jss.pause(steps, 45)  # Pause to get wire tied up
 
-    for num in range(1, 2):
-        start, final = wind_chore(steps, num, 'x')  # wind core
-        print(start, final)
-        jss.move_in_line(steps, final[0], final[1], final[2]+10, M)  # move up and out of the way
-        jss.move_in_line(steps, start[0], start[1], start[2]+10, VF)  # line up for figer wrap
-        # x, y, z = wrap_around_finger(steps, num, VF)  # wrap fingers
+    for num in range(1, 5):
+        _, final = wind_chore(steps, num, 'x')  # wind core 
+        jss.move_in_line(steps, final[0], final[1]-me, final[2]+me, M)  # move up and out of the way
+        x, y, z = wrap_around_finger(steps, num, VF)  # wrap fingers
 
-    # jss.move_in_line(steps, *datum, h+me, VF)
+    jss.move_in_line(steps, x, y, z+me, M)
+    jss.move_in_line(steps, *datum, h+me, VF)
 
     jss.custom_line(steps, 'G4 S10')  # pause for satisfaction
 
@@ -70,5 +88,6 @@ def WIND_1_THRU_4():
 
 if __name__ == '__main__':
     
+    # TEST_DATUM()
     # FINGERS_TEST()
     WIND_1_THRU_4()

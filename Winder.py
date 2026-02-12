@@ -33,7 +33,7 @@ printer = 'ender_3_custom'  # printer options: generic, ultimaker2plus, prusa_i3
 #               You are ready to run your gcode
 
 printer_limits_xyz = [220, 220, 100]  # Limit adjusted for custom nozzle. ender_3 origional limit was 250
-printer_offset = [19.8, 4.9, 4.8]  # Origin is bed corner TODO get new nozzle datum
+printer_offset = [20.7, 4.8, 4.8]  # Origin is bed corner TODO get new nozzle datum
 print_settings = {'extrusion_width': 0.5,'extrusion_height': 0.2, 'nozzle_temp': 0, 'bed_temp': 0, 'fan_percent': 0}  # toggle off fan, bed_temp, nozzle_temp, and arbitrary values for extrusion height/width
 start_code = [ManualGcode(text=f"""
 G90
@@ -65,7 +65,7 @@ nn = 13  # length from nail to nail
 me = 1  # standard margin of error
 nre = 2 + 1  # nozzle radius + a margin of error
 f = 10.3  # finger length to edge
-p = 0.102 + 0.001  # diamter of wire + a marigin of error
+p = 0.102 + 0.01  # diamter of wire + a marigin of error
 
 datum = [20, 20]
 
@@ -143,7 +143,10 @@ def wind_chore(steps, core_num, angle):
     x = datum[0] + en + nx*nn
     y = datum[1] + en + ny*nn
 
-    start_pos, final_pos = jss.multi_pass_wind(steps, x, y, h, nn/2, p, ln, None, 100, F, 'ccw', angle, 1, 0, False)
+    passes = int(((4-1.61)/2)/p)  # OD nail head - OD nail shaft
+    layers = int(ln/p) - 1  # -1 because starting position should be 'p' above h
+
+    start_pos, final_pos = jss.multi_pass_wind(steps, x, y, h+p, nn/2, p, ln-p*2, layers, 100, F, 'ccw', angle, passes, 0, False)
 
     return start_pos, final_pos
     

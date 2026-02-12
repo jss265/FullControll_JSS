@@ -42,6 +42,9 @@ def custom_line(steps: List, line):
     """
     steps.append(ManualGcode(text=line))
 
+def pause(steps: List, s):
+    custom_line(steps, f'G4 S{s}')
+
 def move_in_line(steps: List, x, y, z, speed):
     """
     Add a linear movement to the gcode
@@ -174,6 +177,7 @@ def multi_pass_wind(
     :param passes: number of passes
     :param spacing: radial distance to increase radius for each pass
     :param start_down: if True, first pass goes downward
+    :return: (x, y, z) final position of the wind
     """
     direction_multiplier = -1 if start_down else 1
     current_radius = start_radius
@@ -207,6 +211,33 @@ def multi_pass_wind(
 
     total_windings = total_turns * passes
     print(f'{total_windings} windings wound at {center_x}, {center_y}, {start_z}')
+    
+    # Calculate final position
+    # The final radius after all passes (before last increment in loop)
+    final_radius = start_radius + spacing * (passes - 1)
+    
+    # Convert start_angle to radians
+    if isinstance(start_angle, str):
+        if start_angle.lower() == 'x':
+            angle_deg = 270
+        elif start_angle.lower() == 'x+':
+            angle_deg = 90
+        elif start_angle.lower() == 'y':
+            angle_deg = 180
+        elif start_angle.lower() == 'y+':
+            angle_deg = 0
+        else:
+            raise ValueError("Invalid start_angle string. Use 'x', 'x+', 'y', 'y+' or degrees.")
+    else:
+        angle_deg = start_angle
+    
+    angle_rad = angle_deg * math.pi / 180
+    
+    # Calculate final x, y position based on final radius and angle
+    final_x = center_x + final_radius * math.cos(angle_rad)
+    final_y = center_y + final_radius * math.sin(angle_rad)
+    
+    return final_x, final_y, current_z
 
 def save_gcode(steps, printer, gcode_filename, print_settings, user_overrides):
     """
@@ -316,10 +347,7 @@ def save_html(steps, html_filename="fc_plot.html", embed=True, animate=False, fr
         if not frames:
             raise RuntimeError("Failed to create any animation frames")
         
-        # Create the figure with animation
-        fig = go.Figure(data=frames[0].data, frames=frames)
-        
-        # Add slider and play button
+        # Calculate full bounds from all steps
         xs, ys, zs = [], [], []
 
         for s in steps:
@@ -331,13 +359,43 @@ def save_html(steps, html_filename="fc_plot.html", embed=True, animate=False, fr
         xmin, xmax = min(xs), max(xs)
         ymin, ymax = min(ys), max(ys)
         zmin, zmax = min(zs), max(zs)
+        
+        # Calculate the maximum range to ensure equal scaling
+        xrange = xmax - xmin
+        yrange = ymax - ymin
+        zrange = zmax - zmin
+        max_range = max(xrange, yrange, zrange)
+        
+        # Center each range and expand to max_range
+        x_center = (xmin + xmax) / 2
+        y_center = (ymin + ymax) / 2
+        z_center = (zmin + zmax) / 2
+        
+        # Add invisible reference markers to all frames to keep axes fixed
+        ref_marker = go.Scatter3d(
+            x=[x_center - max_range/2, x_center + max_range/2],
+            y=[y_center - max_range/2, y_center + max_range/2],
+            z=[z_center - max_range/2, z_center + max_range/2],
+            mode='markers',
+            marker=dict(size=0, opacity=0),
+            showlegend=False,
+            hoverinfo='skip'
+        )
+        
+        # Add reference marker to first frame and all subsequent frames
+        frames[0].data = list(frames[0].data) + [ref_marker]
+        for i in range(1, len(frames)):
+            frames[i].data = list(frames[i].data) + [ref_marker]
+        
+        # Create the figure with animation
+        fig = go.Figure(data=frames[0].data, frames=frames)
+        
         fig.update_layout(
             scene=dict(
-                aspectmode="manual",
-                aspectratio=dict(x=1, y=1, z=1),
-                xaxis=dict(range=[xmin, xmax], autorange=False),
-                yaxis=dict(range=[ymin, ymax], autorange=False),
-                zaxis=dict(range=[zmin, zmax], autorange=False),
+                aspectmode="data",
+                xaxis=dict(range=[x_center - max_range/2, x_center + max_range/2], autorange=False),
+                yaxis=dict(range=[y_center - max_range/2, y_center + max_range/2], autorange=False),
+                zaxis=dict(range=[z_center - max_range/2, z_center + max_range/2], autorange=False),
             ),
             updatemenus=[
                 dict(

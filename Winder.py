@@ -6,7 +6,7 @@ import FCJSS as jss
 output_html = False
 output_gcode_to_file = False
 output_gcode_to_microSD = False
-animate = False
+animate = None
 
 hmtl_filename = 'hmtl/Winder'  # folder/name w/o extension
 gcode_filename = 'gcode/Winder'  # folder/name w/o extension
@@ -145,10 +145,9 @@ def wind_chore(steps, core_num, angle):
     
 
 # ---------------- Visualize / Compile ----------------
-def VISUALIZE_AND_COMPILE(steps, animate=False):
+def VISUALIZE_AND_COMPILE(steps, animate):
     if output_html:
         steps_for_html = [s for s in steps if not isinstance(s, ManualGcode)]
-        print(animate)
         jss.save_html(steps_for_html, html_filename=hmtl_filename, animate=animate)
 
 

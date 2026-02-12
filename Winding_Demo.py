@@ -119,7 +119,7 @@ for angle in ['x', 'y', 'x+', 'y+', 'x']:
 
 
 # ---------------- Visualize / Compile ----------------
-if output_html: jss.save_html(steps, html_filename=hmtl_filename)
+if output_html: jss.save_html(steps, html_filename=hmtl_filename, animate=True)
 
 if output_gcode_to_file:
     jss.save_gcode(

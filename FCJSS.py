@@ -239,47 +239,166 @@ def save_gcode(steps, printer, gcode_filename, print_settings, user_overrides):
     )
     print(f"Saved FullControl GCode to:     {out_path.resolve()}")  # space added after ':' to align with save_html print line
 
-def save_html(steps, html_filename="fc_plot.html", embed=True):
+def save_html(steps, html_filename="fc_plot.html", embed=True, animate=False, frame_step=50):
     """
     Save the FullControl plot as a standalone, interactive HTML file.
+    
+    :param steps: List of FullControl steps
+    :param html_filename: Output filename
+    :param embed: Whether to embed Plotly.js
+    :param animate: Whether to create an animated progress plot
+    :param frame_step: Number of steps per animation frame
     """
-
+    
     plot_controls = PlotControls(
         color_type="manual",
         style="line",
         raw_data=True
     )
-
+    
     # ---- REQUIRED FOR NON-EXTRUSION PLOTS ----
     plot_controls.line_width = 1.0
+    
+    if not animate:
+        # Original static plot logic
+        plot_data = visualize(steps, plot_controls, show_tips=False)
+        
+        captured_fig = {"fig": None}
+        original_show = go.Figure.show
+        
+        def capture_show(self, *args, **kwargs):
+            captured_fig["fig"] = self
+            return None
+        
+        go.Figure.show = capture_show
+        try:
+            fc_plot(plot_data, plot_controls)
+        finally:
+            go.Figure.show = original_show
+        
+        fig = captured_fig["fig"]
+        if fig is None:
+            raise RuntimeError("Failed to capture FullControl figure")
+        
+        # Ensure equal axis scaling
+        fig.update_layout(scene=dict(aspectratio=dict(x=1, y=1, z=1)))
+    else:
+        # Animated plot logic
+        frames = []
+        frame_names = []
+        
+        # Create frames at regular intervals
+        for i in range(0, len(steps), frame_step):
+            end_idx = min(i + frame_step, len(steps))
+            frame_steps = steps[:end_idx]
+            
+            plot_data = visualize(frame_steps, plot_controls, show_tips=False)
+            
+            captured_fig = {"fig": None}
+            original_show = go.Figure.show
+            
+            def capture_show(self, *args, **kwargs):
+                captured_fig["fig"] = self
+                return None
+            
+            go.Figure.show = capture_show
+            try:
+                fc_plot(plot_data, plot_controls)
+            finally:
+                go.Figure.show = original_show
+            
+            frame_fig = captured_fig["fig"]
+            if frame_fig is not None:
 
-    # Build PlotData without showing
-    plot_data = visualize(steps, plot_controls, show_tips=False)
+                frames.append(go.Frame(data=frame_fig.data, name=f"Step {end_idx}"))
+                frame_names.append(f"Step {end_idx}")
+        
+        if not frames:
+            raise RuntimeError("Failed to create any animation frames")
+        
+        # Create the figure with animation
+        fig = go.Figure(data=frames[0].data, frames=frames)
+        
+        # Add slider and play button
+        xs, ys, zs = [], [], []
 
-    # Capture the figure at show-time
-    captured_fig = {"fig": None}
-    original_show = go.Figure.show
+        for s in steps:
+            if isinstance(s, fc.Point):
+                xs.append(s.x)
+                ys.append(s.y)
+                zs.append(s.z)
 
-    def capture_show(self, *args, **kwargs):
-        captured_fig["fig"] = self
-        return None  # suppress browser popup
-
-    go.Figure.show = capture_show
-    try:
-        fc_plot(plot_data, plot_controls)
-    finally:
-        go.Figure.show = original_show
-
-    fig = captured_fig["fig"]
-    if fig is None:
-        raise RuntimeError("Failed to capture FullControl figure")
-
-    out_path = Path(html_filename)
+        xmin, xmax = min(xs), max(xs)
+        ymin, ymax = min(ys), max(ys)
+        zmin, zmax = min(zs), max(zs)
+        fig.update_layout(
+            scene=dict(
+                aspectmode="manual",
+                aspectratio=dict(x=1, y=1, z=1),
+                xaxis=dict(range=[xmin, xmax], autorange=False),
+                yaxis=dict(range=[ymin, ymax], autorange=False),
+                zaxis=dict(range=[zmin, zmax], autorange=False),
+            ),
+            updatemenus=[
+                dict(
+                    type="buttons",
+                    buttons=[
+                        dict(
+                            label="Play",
+                            method="animate",
+                            args=[
+                                None,
+                                dict(
+                                    frame=dict(duration=500, redraw=True),
+                                    fromcurrent=True,
+                                    mode="immediate",
+                                    transition=dict(duration=0)
+                                )
+                            ]
+                        ),
+                        dict(
+                            label="Pause",
+                            method="animate",
+                            args=[
+                                [None],
+                                dict(
+                                    frame=dict(duration=0, redraw=False),
+                                    mode="immediate",
+                                    transition=dict(duration=0)
+                                )
+                            ]
+                        )
+                    ]
+                )
+            ],
+            sliders=[
+                dict(
+                    active=0,
+                    steps=[
+                        dict(
+                            method="animate",
+                            args=[
+                                [frame.name],
+                                dict(
+                                    frame=dict(duration=0, redraw=True),
+                                    mode="immediate",
+                                    transition=dict(duration=0)
+                                )
+                            ],
+                            label=frame.name
+                        ) for frame in frames
+                    ],
+                    currentvalue={"prefix": "Progress: "},
+                )
+            ]
+        )
+    
+    out_path = Path(html_filename) if not animate else Path(html_filename+'_animate')
     os.makedirs(out_path.parent, exist_ok=True)
     if out_path.suffix != '.html':
         out_path = out_path.with_suffix('.html')
     pio.write_html(fig, out_path, include_plotlyjs=embed, auto_open=False)
-
+    
     print(f"Saved FullControl HTML plot to: {out_path.resolve()}")
 
 def check_gcode_bounds(gcode_path: Path, limits_xyz):

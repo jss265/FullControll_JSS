@@ -7,7 +7,9 @@ import Winder
 def FINGERS_TEST():
     Winder.output_html = True
     Winder.output_gcode_to_file = True
-    Winder.output_gcode_to_microSD = True
+    Winder.output_gcode_to_microSD = False
+    Winder.animate = True
+
     Winder.hmtl_filename = 'hmtl/Finger_Test'
     Winder.gcode_filename = 'gcode/Finger_Test'
     Winder.gcode_filename_SD = 'D:/Finger_Test'
@@ -26,12 +28,14 @@ def FINGERS_TEST():
 
     jss.custom_line(steps, 'G4 S10')  # pause for satisfaction
 
-    VISUALIZE_AND_COMPILE(steps)
+    VISUALIZE_AND_COMPILE(steps, animate=animate)
 
 def WIND_1_THRU_4():
     Winder.output_html = True
     Winder.output_gcode_to_file = True
-    Winder.output_gcode_to_microSD = True
+    Winder.output_gcode_to_microSD = False
+    Winder.animate = True
+
     Winder.hmtl_filename = 'hmtl/Wind_1-4'
     Winder.gcode_filename = 'gcode/Wind_1-4'
     Winder.gcode_filename_SD = 'D:/Wind_1-4'
@@ -54,12 +58,12 @@ def WIND_1_THRU_4():
 
     jss.custom_line(steps, 'G4 S10')  # pause for satisfaction
 
-    VISUALIZE_AND_COMPILE(steps)
+    VISUALIZE_AND_COMPILE(steps, animate=animate)
 
 
 # -------------------- MAIN --------------------
 
 if __name__ == '__main__':
     
-    # FINGERS_TEST()
+    FINGERS_TEST()
     WIND_1_THRU_4()

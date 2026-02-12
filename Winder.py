@@ -143,10 +143,10 @@ def wind_chore(steps, core_num, angle):
     x = datum[0] + en + nx*nn
     y = datum[1] + en + ny*nn
 
-    passes = int(((4-1.61)/2)/p)  # OD nail head - OD nail shaft
-    layers = int(ln/p) - 1  # -1 because starting position should be 'p' above h
+    passes = int(((4-1.8)/2)/p) - 1  # OD nail head - OD nail shaft. -1 so that wire ends on floor of h
+    layers = int(ln/p) - 6  # -3 because starting position should be 1 'p' above h, and 5 'p' lower for error
 
-    start_pos, final_pos = jss.multi_pass_wind(steps, x, y, h+p, nn/2, p, ln-p*2, layers, 100, F, 'ccw', angle, passes, 0, False)
+    start_pos, final_pos = jss.multi_pass_wind(steps, x, y, h+p, nn/2, p, ln-p*7, layers, 100, F, 'ccw', angle, passes, 0, False)
 
     return start_pos, final_pos
     

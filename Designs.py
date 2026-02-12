@@ -72,7 +72,7 @@ def WIND_1_THRU_4():
     jss.pause(steps, 45)  # Pause to get wire tied up
 
     for num in range(1, 5):
-        _, final = wind_chore(steps, num, 'x')  # wind core 
+        _, final = wind_chore(steps, num, 'x')  # wind core (end on the floor of h so that wire doesn't get caught)
         jss.move_in_line(steps, final[0], final[1]-me, final[2]+me, M)  # move up and out of the way
         x, y, z = wrap_around_finger(steps, num, VF)  # wrap fingers
 

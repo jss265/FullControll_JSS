@@ -4,6 +4,26 @@ import FCJSS as jss
 from _2Winder import *
 import _2Winder  
 
+def ARC_DEMO():
+    _2Winder.output_html = True
+    _2Winder.animate = False
+    _2Winder.output_gcode_to_file = True
+    _2Winder.output_gcode_to_microSD = False
+
+    _2Winder.hmtl_filename = 'hmtl/Arc_demo'
+    _2Winder.gcode_filename = 'gcode/Arc_demo'
+    _2Winder.gcode_filename_SD = 'D:/Arc_demo'
+
+    steps = []
+
+    jss.move_in_line(steps, 10, 10, 0, VF)  # first point
+    x, y, z = jss.move_in_line(steps, 20, 10, 0, VF)
+    x, y, z = jss.arc(steps, x, y, z, 5, -45, 90, 20, M)
+    x, y, z = jss.move_in_line(steps, x, y, z+10, VF)
+    jss.arc(steps, x, y, z, 5, 45, -90, 20, M)
+
+    VISUALIZE_AND_COMPILE(steps, _2Winder.animate)
+
 def FINGERS_TEST():
     _2Winder.output_html = True
     _2Winder.animate = False
@@ -28,4 +48,5 @@ def FINGERS_TEST():
 
 if __name__ == '__main__':
     
+    ARC_DEMO()
     FINGERS_TEST()

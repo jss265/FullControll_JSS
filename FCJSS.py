@@ -75,6 +75,24 @@ def move_in_line(steps: List, x, y, z, speed):
 
     steps.append(fc.Point(x=x,y=y,z=z, color=color))
 
+def arc(steps: List, cx, cy, cz, radius, start_angle, angle, segments):
+    '''
+    Add arc to the GCode.
+    
+    :param steps: List of steps to append
+    :param cx: Center point X Coord
+    :param cy: Center point Y Coord
+    :param cz: Center point Z Coord
+    :param radius: Radius
+    :param start_angle: Starting polar coordinate
+    :param angle: Ending polar coordinate
+    :param segments: Resolution of the arc
+    '''
+    centre_point = fc.Point(cx, cy, cz)
+    start_angle = math.radians(start_angle)
+    angle = math.radians(angle)
+    steps.extend(fc.arcXY(centre_point, radius, start_angle, angle, segments))
+
 def wind_helix(
     steps: List,
     center_x=0,

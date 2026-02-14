@@ -52,6 +52,7 @@ def move_in_line(steps: List, x, y, z, speed):
     :param steps: list of steps to append
     :param x, y, z: coordinates of movement destination
     :param speed: required speed in mm/min eg. 3000 mm/min = 50 mm/s
+    :return: (x, y, z) final position
     """
     if not hasattr(move_in_line, "last_speed"):
         move_in_line.last_speed = None
@@ -74,24 +75,32 @@ def move_in_line(steps: List, x, y, z, speed):
         color = BLACK
 
     steps.append(fc.Point(x=x,y=y,z=z, color=color))
+    return x, y, z
 
-def arc(steps: List, cx, cy, cz, radius, start_angle, angle, segments):
+def arc(steps: List, cx, cy, cz, radius, start_angle, angle, segments, speed):
     '''
     Add arc to the GCode.
     
     :param steps: List of steps to append
-    :param cx: Center point X Coord
-    :param cy: Center point Y Coord
-    :param cz: Center point Z Coord
-    :param radius: Radius
-    :param start_angle: Starting polar coordinate
-    :param angle: Ending polar coordinate
+    :param cx: Center point X Coord (mm)
+    :param cy: Center point Y Coord (mm)
+    :param cz: Center point Z Coord (mm)
+    :param radius: Radius (mm)
+    :param start_angle: Starting polar coordinate (deg)
+    :param angle: Ending polar coordinate (deg)
     :param segments: Resolution of the arc
+    :return: (x, y, z) final position of the arc
     '''
-    centre_point = fc.Point(cx, cy, cz)
-    start_angle = math.radians(start_angle)
-    angle = math.radians(angle)
-    steps.extend(fc.arcXY(centre_point, radius, start_angle, angle, segments))
+    centre_point = fc.Point(x=cx, y=cy, z=cz)
+    start_angle_rad = math.radians(start_angle)
+    angle_rad = math.radians(angle)
+    arc_points = fc.arcXY(centre_point, radius, start_angle_rad, angle_rad, segments)
+    
+    final_x, final_y, final_z = cx, cy, cz
+    for point in arc_points:
+        final_x, final_y, final_z = move_in_line(steps, point.x, point.y, point.z, speed)
+    
+    return final_x, final_y, final_z
 
 def wind_helix(
     steps: List,

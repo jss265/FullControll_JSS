@@ -6,7 +6,7 @@ import _2Winder
 
 def ARC_DEMO():  # just to test arcs
     _2Winder.output_html = True
-    _2Winder.animate = True
+    _2Winder.animate = False
     _2Winder.output_gcode_to_file = True
     _2Winder.output_gcode_to_microSD = False
 
@@ -17,7 +17,7 @@ def ARC_DEMO():  # just to test arcs
     steps = []
 
     jss.move_in_line(steps, 0, 0, 0, VF)  # first point
-    jss.arc(steps, 0, 0, 0, 5, 0, 15, 100, F)
+    jss.arc(steps, 0, 0, 0, 5, 90, 15, 100, F)
     
     # jss.move_in_line(steps, 10, 10, 0, VF)  # first point
     # x, y, z = jss.move_in_line(steps, 20, 10, 0, VF)
@@ -29,7 +29,7 @@ def ARC_DEMO():  # just to test arcs
 
 def SLOT_TEST():  # this is a clearance path test for the new 4x4 grid
     _2Winder.output_html = True
-    _2Winder.animate = True
+    _2Winder.animate = False
     _2Winder.output_gcode_to_file = True
     _2Winder.output_gcode_to_microSD = False
 
@@ -39,7 +39,16 @@ def SLOT_TEST():  # this is a clearance path test for the new 4x4 grid
 
     steps = []
 
-    jss.move_in_line(steps, 10, 10, 0, VF)  # first point
+    x, y, _ = jss.move_in_line(steps, 0, 0, 0, VF)  # first point
+    _, _, z = jss.move_in_line(steps, x, y, h+5, VF)  # up
+    jss.move_in_line(steps, *datum, z, VF)  # to datum
+    jss.move_in_line(steps, *datum, h, M)  # touch  grid top
+    jss.pause(steps, 10)
+
+    z_between = h + 15
+    for core in range(1, 30):
+        x, y, _ = plunge_slot(steps, core)
+        jss.move_in_line(steps, x, y, z_between, VF)
 
     VISUALIZE_AND_COMPILE(steps, _2Winder.animate)
     
@@ -55,7 +64,7 @@ def WIND_TEST_4x4():  # this winds the EM Chores a few times and moves around th
 
     steps = []
 
-    jss.move_in_line(steps, 10, 10, 0, VF)  # first point
+    jss.move_in_line(steps, 0, 0, 0, VF)  # first point
 
     VISUALIZE_AND_COMPILE(steps, _2Winder.animate)
 
@@ -71,7 +80,7 @@ def FULL_4x4():  # full wind to test board when it is ready
 
     steps = []
 
-    jss.move_in_line(steps, 10, 10, 0, VF)  # first point
+    jss.move_in_line(steps, 0, 0, 0, VF)  # first point
 
     VISUALIZE_AND_COMPILE(steps, _2Winder.animate)
 
@@ -79,7 +88,7 @@ def FULL_4x4():  # full wind to test board when it is ready
 
 if __name__ == '__main__':
     
-    ARC_DEMO()
-    # SLOT_TEST()
+    # ARC_DEMO()
+    SLOT_TEST()
     # WIND_TEST_4x4()
     # FULL_4x4()

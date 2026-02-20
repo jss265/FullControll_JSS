@@ -78,12 +78,12 @@ P9 = [3.675, 0] # location 9 relative to d1
 P10 = [1.208, 0.204] # location 10 relative to d2
 PF2 = [2.467, 3.471]  # final location relative to d2
 
-A1 = [r, 90-a_small, -a_small]  # Arc for d1 to P1: radius, start angle, angle
-A2 = [r, 270, -a_small]  # Arc for P4 to P5: radius, start angle, angle
-A3 = [r, 270-a_small, a_large]  # Arc for P5 to P6: radius, start angle, angle
-A4 = [r, 90+a_small, a_small]  # Arc for d1 to P1: radius, start angle, angle
-A5 = [r, 270, a_small]  # Arc for d1 to P1: radius, start angle, angle
-A6 = [r, 270+a_small, a_large]  # Arc for d1 to P1: radius, start angle, angle
+A1 = [r, 90+a_small, -a_small, 15, VF]  # Arc for d1 to P1: radius, start angle, angle, segments, speed
+A2 = [r, 270, -a_small, 15, VF]  # Arc for P4 to P5: radius, start angle, angle, segments, speed
+A3 = [r, 270-a_small, -a_large-360, 45, VF]  # Arc for P5 to P6: radius, start angle, angle, segments, speed
+A4 = [r, 90-a_small, a_small, 15, VF]  # Arc for d1 to P1: radius, start angle, angle, segments, speed
+A5 = [r, 270, a_small, 15, VF]  # Arc for d1 to P1: radius, start angle, angle, segments, speed
+A6 = [r, 270+a_small, a_large+360, 45, VF]  # Arc for d1 to P1: radius, start angle, angle, segments, speed
 
 datum = [20, 20]  # bottom right corner of the board
 d1 = [
@@ -95,7 +95,21 @@ d2 = [
     datum[1] + en - P8[1]/2 - P6[1]
 ]  # plunge location for even cores
 
-def pluge_slot(steps, finger_num, speed):
+def getCoreXYZ(core_num):
+    '''
+    Return (x, y) coordinates of core number passed in.
+    '''
+    n = core_num - 1
+
+    nx = n % 4
+    ny = n // 4
+
+    x = datum[0] + en + nx*nn
+    y = datum[1] + en + ny*nn
+
+    return x, y
+
+def plunge_slot(steps, core_num):
     """
     Wraps wire around pair of fingers.
     
@@ -104,8 +118,41 @@ def pluge_slot(steps, finger_num, speed):
     :param speed: speed of travel from current position to begining of the wrap
     :return: (x, y, z) final position
     """
-   
-    return 
+    n = core_num - 1
+    is_odd = True if core_num % 2 == 1 else False
+    is_far = True if n % 4 in [2, 3] else False
+    datum = d1 if is_odd else d2
+
+    h1 = h+2*p  # top of grid 
+    h2 = h-pd  # plunge depth
+
+    x = datum[0]
+    y = datum[1]
+    if is_far: x += 2*nn
+    y += (n // 4) * nn
+
+    if is_odd:
+        jss.move_in_line(steps, x, y, h1, VF)
+        jss.move_in_line(steps, x, y, h2, M)
+        x, y, _ = jss.arc(steps, *getCoreXYZ(core_num), h2, *A1)
+        x, y, _ = jss.move_in_line(steps, x+P2[0], y+P2[1], h2, VF)
+        x, y, _ = jss.move_in_line(steps, x+P3[0], y+P3[1], h2, VF)
+        x, y, _ = jss.move_in_line(steps, x+P4[0], y+P4[1], h2, VF)
+        x, y, _ = jss.arc(steps, *getCoreXYZ(core_num), h2, *A2)
+        x, y, _ = jss.move_in_line(steps, x, y, h1, VF)
+        final_x, final_y, final_z = jss.arc(steps, *getCoreXYZ(core_num), h1, *A3)
+    else:
+        jss.move_in_line(steps, x, y, h1, VF)
+        jss.move_in_line(steps, x, y, h2, M)
+        x, y, _ = jss.arc(steps, *getCoreXYZ(core_num), h2, *A4)
+        x, y, _ = jss.move_in_line(steps, x+P7[0], y+P7[1], h2, VF)
+        x, y, _ = jss.move_in_line(steps, x+P8[0], y+P8[1], h2, VF)
+        x, y, _ = jss.move_in_line(steps, x+P9[0], y+P9[1], h2, VF)
+        x, y, _ = jss.arc(steps, *getCoreXYZ(core_num), h2, *A5)
+        x, y, _ = jss.move_in_line(steps, x, y, h1, VF)
+        final_x, final_y, final_z = jss.arc(steps, *getCoreXYZ(core_num), h1, *A6)
+    
+    return final_x, final_y, final_z
     
 def wind_chore(steps, core_num, angle):
     '''

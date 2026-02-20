@@ -6,33 +6,36 @@ import _2Winder
 
 def ARC_DEMO():  # just to test arcs
     _2Winder.output_html = True
-    _2Winder.animate = False
+    _2Winder.animate = True
     _2Winder.output_gcode_to_file = True
     _2Winder.output_gcode_to_microSD = False
 
-    _2Winder.hmtl_filename = 'hmtl/Arc_demo'
-    _2Winder.gcode_filename = 'gcode/Arc_demo'
-    _2Winder.gcode_filename_SD = 'D:/Arc_demo'
+    _2Winder.hmtl_filename = 'hmtl/2_Arc_demo'
+    _2Winder.gcode_filename = 'gcode/2_Arc_demo'
+    _2Winder.gcode_filename_SD = 'D:/2_Arc_demo'
 
     steps = []
 
-    jss.move_in_line(steps, 10, 10, 0, VF)  # first point
-    x, y, z = jss.move_in_line(steps, 20, 10, 0, VF)
-    x, y, z = jss.arc(steps, x, y, z, 5, -45, 90, 20, M)
-    x, y, z = jss.move_in_line(steps, x, y, z+10, VF)
-    jss.arc(steps, x, y, z, 5, 45, -90, 20, M)
+    jss.move_in_line(steps, 0, 0, 0, VF)  # first point
+    jss.arc(steps, 0, 0, 0, 5, 0, 15, 100, F)
+    
+    # jss.move_in_line(steps, 10, 10, 0, VF)  # first point
+    # x, y, z = jss.move_in_line(steps, 20, 10, 0, VF)
+    # x, y, z = jss.arc(steps, x, y, z, 5, -45, 90, 20, M)
+    # x, y, z = jss.move_in_line(steps, x, y, z+10, VF)
+    # jss.arc(steps, x, y, z, 5, 45, -90, 20, M)
 
     VISUALIZE_AND_COMPILE(steps, _2Winder.animate)
 
-def FINGERS_TEST():  # this is a clearance path test for the new 4x4 grid
+def SLOT_TEST():  # this is a clearance path test for the new 4x4 grid
     _2Winder.output_html = True
-    _2Winder.animate = False
+    _2Winder.animate = True
     _2Winder.output_gcode_to_file = True
     _2Winder.output_gcode_to_microSD = False
 
-    _2Winder.hmtl_filename = 'hmtl/2_Fingers_test'
-    _2Winder.gcode_filename = 'gcode/2_Fingers_test'
-    _2Winder.gcode_filename_SD = 'D:/2_Fingers_test'
+    _2Winder.hmtl_filename = 'hmtl/2_Slot_test'
+    _2Winder.gcode_filename = 'gcode/2_Slot_test'
+    _2Winder.gcode_filename_SD = 'D:/2_Slot_test'
 
     steps = []
 
@@ -40,15 +43,15 @@ def FINGERS_TEST():  # this is a clearance path test for the new 4x4 grid
 
     VISUALIZE_AND_COMPILE(steps, _2Winder.animate)
     
-def FINGER_WIND_4x4():  # this winds the EM Chores a few times and moves around the fingers/webbing to test the webbing
+def WIND_TEST_4x4():  # this winds the EM Chores a few times and moves around the fingers/webbing to test the webbing
     _2Winder.output_html = True
     _2Winder.animate = False
     _2Winder.output_gcode_to_file = True
     _2Winder.output_gcode_to_microSD = False
 
-    _2Winder.hmtl_filename = 'hmtl/2_Fingers_test'
-    _2Winder.gcode_filename = 'gcode/2_Fingers_test'
-    _2Winder.gcode_filename_SD = 'D:/2_Fingers_test'
+    _2Winder.hmtl_filename = 'hmtl/2_Wind_Test_4x4'
+    _2Winder.gcode_filename = 'gcode/2_Wind_Test_4x4'
+    _2Winder.gcode_filename_SD = 'D:/2_Wind_Test_4x4'
 
     steps = []
 
@@ -62,9 +65,9 @@ def FULL_4x4():  # full wind to test board when it is ready
     _2Winder.output_gcode_to_file = True
     _2Winder.output_gcode_to_microSD = False
 
-    _2Winder.hmtl_filename = 'hmtl/2_Fingers_test'
-    _2Winder.gcode_filename = 'gcode/2_Fingers_test'
-    _2Winder.gcode_filename_SD = 'D:/2_Fingers_test'
+    _2Winder.hmtl_filename = 'hmtl/2_Full_4x4'
+    _2Winder.gcode_filename = 'gcode/2_Full_4x4'
+    _2Winder.gcode_filename_SD = 'D:/2_Full_4x4'
 
     steps = []
 
@@ -76,7 +79,7 @@ def FULL_4x4():  # full wind to test board when it is ready
 
 if __name__ == '__main__':
     
-    # ARC_DEMO()
-    FINGERS_TEST()
-    # FINGER_WIND_4x4()
+    ARC_DEMO()
+    # SLOT_TEST()
+    # WIND_TEST_4x4()
     # FULL_4x4()

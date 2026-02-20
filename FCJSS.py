@@ -79,7 +79,7 @@ def move_in_line(steps: List, x, y, z, speed):
 
 def arc(steps: List, cx, cy, cz, radius, start_angle, angle, segments, speed):
     '''
-    Add arc to the GCode.
+    Add arc to the GCode. 0 deg is side +Y. Positive degrees is CCW.
     
     :param steps: List of steps to append
     :param cx: Center point X Coord (mm)

@@ -8,9 +8,9 @@ output_gcode_to_file = False
 output_gcode_to_microSD = False
 animate = None
 
-hmtl_filename = 'hmtl/Winder'  # folder/name w/o extension
-gcode_filename = 'gcode/Winder'  # folder/name w/o extension
-gcode_filename_SD = 'D:/Winder'  # folder/name w/o extension
+hmtl_filename = 'hmtl/2Winder'  # folder/name w/o extension
+gcode_filename = 'gcode/2Winder'  # folder/name w/o extension
+gcode_filename_SD = 'D:/2Winder'  # folder/name w/o extension
 
 
 # ---------------- Printer Settings ----------------
@@ -54,22 +54,48 @@ VF, F, M, S, VS, SS = jss.SPEED1, jss.SPEED2, jss.SPEED3, jss.SPEED4, jss.SPEED5
 # ---------------- Design ----------------
 
 # -- Design Defs --
-h = 28.25  # height of the winder surface
-w = 59  # width of main base
-lw = 2.5  # length from h to webbing 
-ln = 5.5 - .2  # length from h to nail roof - a margin of error TODO verify this val
-lf = 8.6  # length from inner to outer finger
-le = 5.9  # length between sets of fingers
-en = 10  # length from edge to nail
-nn = 13  # length from nail to nail
-me = 1  # standard margin of error
-nre = 2 + 1  # nozzle radius + a margin of error
-f = 10.3  # finger length to edge
+h = 31.25  # height of the winder surface
+w = 42.05  # width of main base
+en = 10  # length from edge to first nail
+nn = 7.35  # length between each nail
+pd = 5.575  # plundge depth into slot
+ln = 5.5 - 0.2  # TODO verify and cope Test Grid!! length between h and nail roof - a margin of error
+r = 3.675  # radius from core to nozzle path
+a_small = 19.197  # arc length angle for small arcs  
+a_large = 70.803  # arc length angle for large arcs
 p = 0.102 + 0.01  # diamter of wire + a marigin of error
 
-datum = [20, 20]
+P1 = [1.208, 0.204] # location 1 relative to d1
+P2 = [3.675, 0] # location 2 relative to d2
+P3 = [0, -7.350] # location 3 relative to d1
+P4 = [-3.675, 0] # location 4 relative to d2
+P5 = [-1.208, 0.204] # location 5 relative to d1
+PF1 = [-2.467, 3.471]  # final location relative to d1
+P6 = [-1.208, 0.204] # location 6 relative to d2
+P7 = [-3.675, 0] # location 7 relative to d1
+P8 = [0, -7.350] # location 8 relative to d2
+P9 = [3.675, 0] # location 9 relative to d1
+P10 = [1.208, 0.204] # location 10 relative to d2
+PF2 = [2.467, 3.471]  # final location relative to d2
 
-def wrap_around_finger(steps, finger_num, speed):
+A1 = [r, 90-a_small, -a_small]  # Arc for d1 to P1: radius, start angle, angle
+A2 = [r, 270, -a_small]  # Arc for P4 to P5: radius, start angle, angle
+A3 = [r, 270-a_small, a_large]  # Arc for P5 to P6: radius, start angle, angle
+A4 = [r, 90+a_small, a_small]  # Arc for d1 to P1: radius, start angle, angle
+A5 = [r, 270, a_small]  # Arc for d1 to P1: radius, start angle, angle
+A6 = [r, 270+a_small, a_large]  # Arc for d1 to P1: radius, start angle, angle
+
+datum = [20, 20]  # bottom right corner of the board
+d1 = [
+    datum[0] + en - P1[0],
+    datum[1] + en - P3[1]/2 - P1[1]
+]  # plunge location for odd cores
+d2 = [
+    datum[0] + en + nn - P6[0],
+    datum[1] + en - P8[1]/2 - P6[1]
+]  # plunge location for even cores
+
+def pluge_slot(steps, finger_num, speed):
     """
     Wraps wire around pair of fingers.
     
@@ -78,53 +104,8 @@ def wrap_around_finger(steps, finger_num, speed):
     :param speed: speed of travel from current position to begining of the wrap
     :return: (x, y, z) final position
     """
-    A = B = C = D = E = G = []  # don't use F (fast)
-
-    if finger_num in [1, 2, 3, 4]: group = 'x'
-    elif finger_num in [5, 6, 7, 8]: group = 'y+'
-    elif finger_num in [9, 10, 11, 12]: group = 'x+'
-    elif finger_num in [13, 14, 15, 16]: group = 'y'
-    else: raise ValueError(f'got {finger_num}, expected 1-32')
-
-    n = (finger_num - 1) % 4
-    if group == 'x':
-        Ax = Bx = Cx = datum[0] + lf + le/2 + n*(lf+le)
-        Dx = Ex = Gx = datum[0] + lf + le/2 + (n-1)*(lf+le)
-        Ay = By = Ey = Gy = datum[1]-nre
-        Cy = Dy = datum[1]-nre-f
-    elif group == 'y+':
-        Ax = Bx = Ex = Gx = datum[0]+w+nre
-        Cx = Dx = datum[0]+w+nre+f
-        Ay = By = Cy = datum[1] + lf + le/2 + n*(lf+le)
-        Dy = Ey = Gy = datum[1] + lf + le/2 + (n-1)*(lf+le)
-    elif group == 'x+':
-        Ax = Bx = Cx = datum[0] + w - lf - le/2 - n*(lf+le)
-        Dx = Ex = Gx = datum[0] + w - lf - le/2 - (n-1)*(lf+le)
-        Ay = By = Ey = Gy = datum[1]+w+nre        
-        Cy = Dy = datum[1]+w+nre+f        
-    elif group == 'y':
-        Ax = Bx = Ex = Gx = datum[0]-nre
-        Cx = Dx = datum[0]-nre-f
-        Ay = By = Cy = datum[1] + w - lf - le/2 - n*(lf+le)
-        Dy = Ey = Gy = datum[1] + w - lf - le/2 - (n-1)*(lf+le)
-
-    else: raise ValueError('around_finger error. Unknown cause')
-
-    A = [Ax, Ay, h+me]
-    B = [Bx, By, h-lw]
-    C = [Cx, Cy, h-lw]
-    D = [Dx, Dy, h-lw]
-    E = [Ex, Ey, h-lw]
-    G = [Gx, Gy, h+me]
-    
-    jss.move_in_line(steps, *A, speed)  # to spot
-    jss.move_in_line(steps, *B, S)  # down
-    jss.move_in_line(steps, *C, F)
-    jss.move_in_line(steps, *D, M)  # around
-    jss.move_in_line(steps, *E, F)
-    jss.move_in_line(steps, *G, M)  # up
-    
-    return Gx, Gy, h+me
+   
+    return 
     
 def wind_chore(steps, core_num, angle):
     '''

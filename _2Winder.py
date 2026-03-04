@@ -59,7 +59,7 @@ w = 42.05  # width of main base
 en = 10  # length from edge to first nail
 nn = 7.35  # length between each nail
 pd = 5.575  # plundge depth into slot
-ln = 5.5 - 0.2  # TODO verify and cope Test Grid!! length between h and nail roof - a margin of error
+ln = 5.5 - 0.2  # TODO verify and cope Test Grid!! length between h and nail roof - a margin of error NOTE Onshape shows this should be 5 not 5.5
 r = 3.675  # radius from core to nozzle path
 a_small = 19.197  # arc length angle for small arcs  
 a_large = 70.803  # arc length angle for large arcs
@@ -80,10 +80,10 @@ PF2 = [2.467, 3.471]  # final location relative to d2
 
 A1 = [r, 90+a_small, -a_small, 15, VF]  # Arc for d1 to P1: radius, start angle, angle, segments, speed
 A2 = [r, 270, -a_small, 15, VF]  # Arc for P4 to P5: radius, start angle, angle, segments, speed
-A3 = [r, 270-a_small, -a_large-360, 45, VF]  # Arc for P5 to P6: radius, start angle, angle, segments, speed
+A3 = [r, 270-a_small, -a_large-90, 45, VF]  # Arc for P5 to P6: radius, start angle, angle, segments, speed
 A4 = [r, 90-a_small, a_small, 15, VF]  # Arc for d1 to P1: radius, start angle, angle, segments, speed
 A5 = [r, 270, a_small, 15, VF]  # Arc for d1 to P1: radius, start angle, angle, segments, speed
-A6 = [r, 270+a_small, a_large+360, 45, VF]  # Arc for d1 to P1: radius, start angle, angle, segments, speed
+A6 = [r, 270+a_small, a_large+90, 45, VF]  # Arc for d1 to P1: radius, start angle, angle, segments, speed
 
 datum = [20, 20]  # bottom right corner of the board
 d1 = [
@@ -95,7 +95,7 @@ d2 = [
     datum[1] + en - P8[1]/2 - P6[1]
 ]  # plunge location for even cores
 
-def getCoreXYZ(core_num):
+def getCoreXY(core_num):
     '''
     Return (x, y) coordinates of core number passed in.
     '''
@@ -108,13 +108,35 @@ def getCoreXYZ(core_num):
     y = datum[1] + en + ny*nn
 
     return x, y
+def goToNextDatum(steps, core_num):
+    """
+    Moves to next specified core datum along approved clearance path.
+    Assumes starting location is on the "X+" side of any core wind at h+p*2 height.
 
+    :param steps: list of steps to append
+    "param core_num: location of core to wrap
+    """
+    n = core_num - 1
+    is_odd = True if core_num % 2 == 1 else False
+    is_far = True if n % 4 in [2, 3] else False
+    datum = d1 if is_odd else d2
+    next_coreXY = getCoreXY(core_num + 1)
+
+    h1 = h+2*p  # top of grid 
+
+    x = datum[0]
+    y = datum[1]
+    if is_far: x += 2*nn
+    y += (n // 4) * nn
+
+    #TODO finish if n % 4 in [0, 1, 2] else ... I think
+    
 def plunge_slot(steps, core_num):
     """
     Wraps wire around pair of fingers.
     
     :param steps: list of steps to append
-    :param finger_num: location of fingers to wrap
+    :param core_num: location of core to wrap
     :param speed: speed of travel from current position to begining of the wrap
     :return: (x, y, z) final position
     """
@@ -122,6 +144,7 @@ def plunge_slot(steps, core_num):
     is_odd = True if core_num % 2 == 1 else False
     is_far = True if n % 4 in [2, 3] else False
     datum = d1 if is_odd else d2
+    coreXY = getCoreXY(core_num)
 
     h1 = h+2*p  # top of grid 
     h2 = h-pd  # plunge depth
@@ -134,23 +157,23 @@ def plunge_slot(steps, core_num):
     if is_odd:
         jss.move_in_line(steps, x, y, h1, VF)
         jss.move_in_line(steps, x, y, h2, M)
-        x, y, _ = jss.arc(steps, *getCoreXYZ(core_num), h2, *A1)
+        x, y, _ = jss.arc(steps, *coreXY, h2, *A1)
         x, y, _ = jss.move_in_line(steps, x+P2[0], y+P2[1], h2, VF)
         x, y, _ = jss.move_in_line(steps, x+P3[0], y+P3[1], h2, VF)
         x, y, _ = jss.move_in_line(steps, x+P4[0], y+P4[1], h2, VF)
-        x, y, _ = jss.arc(steps, *getCoreXYZ(core_num), h2, *A2)
+        x, y, _ = jss.arc(steps, *coreXY, h2, *A2)
         x, y, _ = jss.move_in_line(steps, x, y, h1, VF)
-        final_x, final_y, final_z = jss.arc(steps, *getCoreXYZ(core_num), h1, *A3)
+        final_x, final_y, final_z = jss.arc(steps, *coreXY, h1, *A3)
     else:
         jss.move_in_line(steps, x, y, h1, VF)
         jss.move_in_line(steps, x, y, h2, M)
-        x, y, _ = jss.arc(steps, *getCoreXYZ(core_num), h2, *A4)
+        x, y, _ = jss.arc(steps, *coreXY, h2, *A4)
         x, y, _ = jss.move_in_line(steps, x+P7[0], y+P7[1], h2, VF)
         x, y, _ = jss.move_in_line(steps, x+P8[0], y+P8[1], h2, VF)
         x, y, _ = jss.move_in_line(steps, x+P9[0], y+P9[1], h2, VF)
-        x, y, _ = jss.arc(steps, *getCoreXYZ(core_num), h2, *A5)
+        x, y, _ = jss.arc(steps, *coreXY, h2, *A5)
         x, y, _ = jss.move_in_line(steps, x, y, h1, VF)
-        final_x, final_y, final_z = jss.arc(steps, *getCoreXYZ(core_num), h1, *A6)
+        final_x, final_y, final_z = jss.arc(steps, *coreXY, h1, *A6)
     
     return final_x, final_y, final_z
     
@@ -180,10 +203,10 @@ def wind_chore(steps, core_num, angle):
     
 
 # ---------------- Visualize / Compile ----------------
-def VISUALIZE_AND_COMPILE(steps, animate):
+def VISUALIZE_AND_COMPILE(steps, animate, frame_step=50):
     if output_html:
         steps_for_html = [s for s in steps if not isinstance(s, ManualGcode)]
-        jss.save_html(steps_for_html, html_filename=hmtl_filename, animate=animate)
+        jss.save_html(steps_for_html, html_filename=hmtl_filename, animate=animate, frame_step=frame_step)
 
 
     if output_gcode_to_file:

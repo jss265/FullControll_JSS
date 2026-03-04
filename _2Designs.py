@@ -39,18 +39,25 @@ def SLOT_TEST():  # this is a clearance path test for the new 4x4 grid
 
     steps = []
 
-    x, y, _ = jss.move_in_line(steps, 0, 0, 0, VF)  # first point
-    _, _, z = jss.move_in_line(steps, x, y, h+5, VF)  # up
-    jss.move_in_line(steps, *datum, z, VF)  # to datum
-    jss.move_in_line(steps, *datum, h, M)  # touch  grid top
+    x, y, _ = jss.move_in_line(steps, 0, 0, 0, F)  # first point
+    _, _, z = jss.move_in_line(steps, x, y, h+5, F)  # up
+    jss.move_in_line(steps, *datum, z, F)  # to datum
+    jss.move_in_line(steps, *datum, h, F)  # touch grid top
+    x, y = datum
+    y += en + nn/2
+    jss.move_in_line(steps, x, y, h+p*2, F)  # move up to first nail
     jss.pause(steps, 10)
 
-    z_between = h + 15
-    for core in range(1, 30):
-        x, y, _ = plunge_slot(steps, core)
-        jss.move_in_line(steps, x, y, z_between, VF)
+    z_between = h + 10
+    first = 1
+    last = 5
+    for core in range(first, last+1):
+        plunge_slot(steps, core)
+        _, final_pos = wind_chore(steps, core, 'x+')
+        jss.move_in_line(steps, final_pos[0], final_pos[1], z_between, S)
+        
 
-    VISUALIZE_AND_COMPILE(steps, _2Winder.animate)
+    VISUALIZE_AND_COMPILE(steps, _2Winder.animate, frame_step=1)
     
 def WIND_TEST_4x4():  # this winds the EM Chores a few times and moves around the fingers/webbing to test the webbing
     _2Winder.output_html = True

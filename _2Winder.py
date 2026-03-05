@@ -33,7 +33,7 @@ printer = 'ender_3_custom'  # printer options: generic, ultimaker2plus, prusa_i3
 #               You are ready to run your gcode
 
 printer_limits_xyz = [220, 220, 100]  # Limit adjusted for custom nozzle. ender_3 origional limit was 250
-printer_offset = [20.7, 4.8, 4.8]  # Origin is bed corner TODO get new nozzle datum
+printer_offset = [20.0, 4.8, 4.8]  # Origin is bed corner
 print_settings = {'extrusion_width': 0.5,'extrusion_height': 0.2, 'nozzle_temp': 0, 'bed_temp': 0, 'fan_percent': 0}  # toggle off fan, bed_temp, nozzle_temp, and arbitrary values for extrusion height/width
 start_code = [ManualGcode(text=f"""
 G90
@@ -54,12 +54,12 @@ VF, F, M, S, VS, SS = jss.SPEED1, jss.SPEED2, jss.SPEED3, jss.SPEED4, jss.SPEED5
 # ---------------- Design ----------------
 
 # -- Design Defs --
-h = 31.25  # height of the winder surface
+h = 28.75  # height of the winder surface NOTE + 0.5 margin of error
 w = 42.05  # width of main base
 en = 10  # length from edge to first nail
 nn = 7.35  # length between each nail
 pd = 5.575  # plundge depth into slot
-ln = 5.5 - 0.2  # TODO verify and cope Test Grid!! length between h and nail roof - a margin of error NOTE Onshape shows this should be 5 not 5.5
+ln = 4.75 - 0.25  # length between h and nail roof underside - a margin of error
 r = 3.675  # radius from core to nozzle path
 a_small = 19.197  # arc length angle for small arcs  
 a_large = 70.803  # arc length angle for large arcs
@@ -84,8 +84,10 @@ A3 = [r, 270-a_small, -a_large-90, 45, VF]  # Arc for P5 to P6: radius, start an
 A4 = [r, 90-a_small, a_small, 15, VF]  # Arc for d1 to P1: radius, start angle, angle, segments, speed
 A5 = [r, 270, a_small, 15, VF]  # Arc for d1 to P1: radius, start angle, angle, segments, speed
 A6 = [r, 270+a_small, a_large+90, 45, VF]  # Arc for d1 to P1: radius, start angle, angle, segments, speed
+ACW = [r, 90, -320, 100, VF]  # Staring arc for CW cores
+ACCW = [r, 90, 320, 100, VF]  # Staring arc for CCW cores
 
-datum = [20, 20]  # bottom right corner of the board
+datum = [20-0.4, 20-0.2]  # bottom right corner of the board NOTE can change depending on fixture
 d1 = [
     datum[0] + en - P1[0],
     datum[1] + en - P3[1]/2 - P1[1]
@@ -108,6 +110,7 @@ def getCoreXY(core_num):
     y = datum[1] + en + ny*nn
 
     return x, y
+
 def goToNextDatum(steps, core_num):
     """
     Moves to next specified core datum along approved clearance path.
@@ -146,7 +149,7 @@ def plunge_slot(steps, core_num):
     datum = d1 if is_odd else d2
     coreXY = getCoreXY(core_num)
 
-    h1 = h+2*p  # top of grid 
+    h1 = h+3*p  # top of grid 
     h2 = h-pd  # plunge depth
 
     x = datum[0]
@@ -154,7 +157,10 @@ def plunge_slot(steps, core_num):
     if is_far: x += 2*nn
     y += (n // 4) * nn
 
+    dmo = 0.204  # datum to midline offset
     if is_odd:
+        jss.move_in_line(steps, x, y+dmo, h1, VF)  # this allows previous move to be between nails safely
+        jss.arc(steps, *coreXY, h1, *ACW)  # wraps around core before plunge
         jss.move_in_line(steps, x, y, h1, VF)
         jss.move_in_line(steps, x, y, h2, M)
         x, y, _ = jss.arc(steps, *coreXY, h2, *A1)
@@ -165,6 +171,8 @@ def plunge_slot(steps, core_num):
         x, y, _ = jss.move_in_line(steps, x, y, h1, VF)
         final_x, final_y, final_z = jss.arc(steps, *coreXY, h1, *A3)
     else:
+        jss.move_in_line(steps, x, y+dmo, h1, VF)  # this allows previous move to be between nails safely
+        jss.arc(steps, *coreXY, h1, *ACCW)  # wraps around core before plunge
         jss.move_in_line(steps, x, y, h1, VF)
         jss.move_in_line(steps, x, y, h2, M)
         x, y, _ = jss.arc(steps, *coreXY, h2, *A4)
@@ -177,13 +185,14 @@ def plunge_slot(steps, core_num):
     
     return final_x, final_y, final_z
     
-def wind_chore(steps, core_num, angle):
+def wind_chore(steps, core_num, angle, rotation):
     '''
     Wind wire around a core.
     
     :param steps: list of steps to append
     :param core_num: location of core to wind
     :param angle: represent both start and end position relative to the core (deg OR 'x', 'x+', 'y', 'y+')
+    :param rotation: rotation of wind
     :return: ((start_x, start_y, start_z), (final_x, final_y, final_z)) start and final positions
     '''
     n = core_num - 1
@@ -195,9 +204,23 @@ def wind_chore(steps, core_num, angle):
     y = datum[1] + en + ny*nn
 
     passes = int(((4-1.8)/2)/p) - 1  # OD nail head - OD nail shaft. -1 so that wire ends on floor of h
-    layers = int(ln/p) - 6  # -3 because starting position should be 1 'p' above h, and 5 'p' lower for error
+    layers = int(ln/p) - 5  # -5 because starting position should be 4*p above h and include margin of error
 
-    start_pos, final_pos = jss.multi_pass_wind(steps, x, y, h+p, nn/2, p, ln-p*7, layers, 100, F, 'ccw', angle, passes, 0, False)
+    start_pos, final_pos = jss.multi_pass_wind(steps=steps,
+                                               center_x=x,
+                                               center_y=y,
+                                               start_z=h+4*p,
+                                               start_radius=nn/2,
+                                               pitch=p,
+                                               height=None,
+                                               turns=layers,
+                                               points_per_turn=100,
+                                               speed=VF,
+                                               rotation=rotation,
+                                               start_angle=angle,
+                                               passes=passes,
+                                               spacing=0,
+                                               start_down=False)
 
     return start_pos, final_pos
     

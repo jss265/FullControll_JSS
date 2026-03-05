@@ -27,11 +27,52 @@ def ARC_DEMO():  # just to test arcs
 
     VISUALIZE_AND_COMPILE(steps, _2Winder.animate)
 
+def MISS_NAILS():  # test clearance between cores
+    _2Winder.output_html = True
+    _2Winder.animate = False
+    _2Winder.output_gcode_to_file = True
+    _2Winder.output_gcode_to_microSD = True
+
+    _2Winder.hmtl_filename = 'hmtl/MISS_NAILS'
+    _2Winder.gcode_filename = 'gcode/MISS_NAILS'
+    _2Winder.gcode_filename_SD = 'D:/MISS_NAILS'
+
+    steps = []
+    
+    x, y, _ = jss.move_in_line(steps, 0, 0, 0, VF)  # first point
+    _, _, z = jss.move_in_line(steps, x, y, h+5, VF)  # up
+    jss.move_in_line(steps, *datum, z, VF)  # to datum
+    x, y, z = jss.move_in_line(steps, *datum, h, M)  # touch grid top
+    jss.pause(steps, 10)
+
+    x, y, z = jss.move_in_line(steps, x, y, z+2*p, VS)  # move just off the grid
+
+    # Between nails in x
+    x, y, z = jss.move_in_line(steps, x, y+en-nn/2, z, VS)  # to below nail row
+    dist = w
+    for i in range(1,6):
+        x, y, z = jss.move_in_line(steps, x+dist, y, z, VS)  # move accross
+        if i == 5: break
+        x, y, z = jss.move_in_line(steps, x, y+nn, z, VS)  # move accross
+        dist *= -1
+
+    # Between nails in y
+    x, y, z = jss.move_in_line(steps, x-en+nn/2, y, z, VS)  # to column outside
+    x, y, z = jss.move_in_line(steps, x, y+en-nn/2, z, VS)  # to edge
+    dist = w
+    for i in range(1,6):
+        dist *= -1
+        x, y, z = jss.move_in_line(steps, x, y+dist, z, VS)  # move accross
+        if i == 5: break
+        x, y, z = jss.move_in_line(steps, x-nn, y, z, VS)  # move accross
+
+    VISUALIZE_AND_COMPILE(steps, _2Winder.animate, frame_step=1)
+
 def SLOT_TEST():  # this is a clearance path test for the new 4x4 grid
     _2Winder.output_html = True
     _2Winder.animate = False
     _2Winder.output_gcode_to_file = True
-    _2Winder.output_gcode_to_microSD = False
+    _2Winder.output_gcode_to_microSD = True
 
     _2Winder.hmtl_filename = 'hmtl/2_Slot_test'
     _2Winder.gcode_filename = 'gcode/2_Slot_test'
@@ -42,20 +83,24 @@ def SLOT_TEST():  # this is a clearance path test for the new 4x4 grid
     x, y, _ = jss.move_in_line(steps, 0, 0, 0, F)  # first point
     _, _, z = jss.move_in_line(steps, x, y, h+5, F)  # up
     jss.move_in_line(steps, *datum, z, F)  # to datum
+    jss.pause(steps, 2)
     jss.move_in_line(steps, *datum, h, F)  # touch grid top
     x, y = datum
     y += en + nn/2
     jss.move_in_line(steps, x, y, h+p*2, F)  # move up to first nail
-    jss.pause(steps, 10)
+    jss.pause(steps, 2)
 
-    z_between = h + 10
     first = 1
-    last = 5
+    last = 16
     for core in range(first, last+1):
-        plunge_slot(steps, core)
-        _, final_pos = wind_chore(steps, core, 'x+')
-        jss.move_in_line(steps, final_pos[0], final_pos[1], z_between, S)
-        
+        x, y, z = plunge_slot(steps, core)
+        if core == 16:
+            x, y, z = jss.move_in_line(steps, x, y, z+10, F)  # move up and end
+            break
+        if core % 4 == 0:
+            x, y, z = jss.move_in_line(steps, x+r, y, z, VF)  # position between rows
+            jss.move_in_line(steps, x, y+nn, z, VF)  # increase y between rows of cores
+
 
     VISUALIZE_AND_COMPILE(steps, _2Winder.animate, frame_step=1)
     
@@ -63,7 +108,7 @@ def WIND_TEST_4x4():  # this winds the EM Chores a few times and moves around th
     _2Winder.output_html = True
     _2Winder.animate = False
     _2Winder.output_gcode_to_file = True
-    _2Winder.output_gcode_to_microSD = False
+    _2Winder.output_gcode_to_microSD = True
 
     _2Winder.hmtl_filename = 'hmtl/2_Wind_Test_4x4'
     _2Winder.gcode_filename = 'gcode/2_Wind_Test_4x4'
@@ -71,15 +116,40 @@ def WIND_TEST_4x4():  # this winds the EM Chores a few times and moves around th
 
     steps = []
 
-    jss.move_in_line(steps, 0, 0, 0, VF)  # first point
+    x, y, _ = jss.move_in_line(steps, 0, 0, 0, F)  # first point
+    _, _, z = jss.move_in_line(steps, x, y, h+5, F)  # up
+    jss.move_in_line(steps, *datum, z, F)  # to datum
+    jss.pause(steps, 2)
+    jss.move_in_line(steps, *datum, h, F)  # touch grid top
+    x, y = datum
+    y += en + nn/2
+    jss.move_in_line(steps, x, y, h+p*2, F)  # move up to first nail and just off grid surface
+    jss.pause(steps, 10)
 
-    VISUALIZE_AND_COMPILE(steps, _2Winder.animate)
+    z_between = h + 10
+    first = 1
+    last = 2
+    for core in range(first, last+1):
+        rotation = 'ccw' if core % 2 == 0 else 'cw'
+        plunge_slot(steps, core)
+        _, final_pos = wind_chore(steps, core, 'x+', rotation)
+        if core == 16:
+            x, y, z = jss.move_in_line(steps, final_pos[0], final_pos[1], z+10, F)  # move up and end
+            break
+        if core % 4 == 0: 
+            x, y, z = jss.move_in_line(steps, final_pos[0]+r, final_pos[1], z, VF)  # position between rows
+            jss.move_in_line(steps, x, y, z_between, S)  # increase z between cores
+            jss.move_in_line(steps, x, y+nn, z_between, S)  # increase y between rows of cores
+        else:
+            jss.move_in_line(steps, final_pos[0], final_pos[1], z_between, S)  # increase z between cores
+        
+    VISUALIZE_AND_COMPILE(steps, _2Winder.animate, frame_step=2)
 
 def FULL_4x4():  # full wind to test board when it is ready
     _2Winder.output_html = True
     _2Winder.animate = False
     _2Winder.output_gcode_to_file = True
-    _2Winder.output_gcode_to_microSD = False
+    _2Winder.output_gcode_to_microSD = True
 
     _2Winder.hmtl_filename = 'hmtl/2_Full_4x4'
     _2Winder.gcode_filename = 'gcode/2_Full_4x4'
@@ -87,15 +157,37 @@ def FULL_4x4():  # full wind to test board when it is ready
 
     steps = []
 
-    jss.move_in_line(steps, 0, 0, 0, VF)  # first point
+    x, y, _ = jss.move_in_line(steps, 0, 0, 0, F)  # first point
+    _, _, z = jss.move_in_line(steps, x, y, h+5, F)  # up
+    jss.move_in_line(steps, *datum, z, F)  # to datum
+    jss.pause(steps, 2)
+    jss.move_in_line(steps, *datum, h, F)  # touch grid top
+    x, y = datum
+    y += en + nn/2
+    jss.move_in_line(steps, x, y, h+p*2, F)  # move up to first nail and just off grid surface
+    jss.pause(steps, 30)
 
-    VISUALIZE_AND_COMPILE(steps, _2Winder.animate)
+    first = 1
+    last = 4
+    for core in range(first, last+1):
+        rotation = 'ccw' if core % 2 == 0 else 'cw'
+        plunge_slot(steps, core)
+        _, final_pos = wind_chore(steps, core, 'x+', rotation)
+        if core == last:
+            x, y, z = jss.move_in_line(steps, final_pos[0], final_pos[1], z+10, F)  # move up and end
+            break
+        if core % 4 == 0: 
+            x, y, z = jss.move_in_line(steps, final_pos[0]+r, final_pos[1], final_pos[2], VF)  # position between rows
+            jss.move_in_line(steps, x, y+nn, final_pos[2], S)  # increase y between rows of cores
+        
+    VISUALIZE_AND_COMPILE(steps, _2Winder.animate, frame_step=2)
 
 # -------------------- MAIN --------------------
 
 if __name__ == '__main__':
     
     # ARC_DEMO()
-    SLOT_TEST()
-    # WIND_TEST_4x4()
-    # FULL_4x4()
+    # MISS_NAILS()  # WORKED!!
+    # SLOT_TEST()  # WORKED!!
+    # WIND_TEST_4x4()  # SEEMED TO WORK!!
+    FULL_4x4()

@@ -145,15 +145,15 @@ def WIND_TEST_4x4():  # this winds the EM Chores a few times and moves around th
         
     VISUALIZE_AND_COMPILE(steps, _2Winder.animate, frame_step=2)
 
-def FULL_4x4():  # full wind to test board when it is ready
+def FULL_4x4_ROW():  # full wind to test board when it is ready
     _2Winder.output_html = True
     _2Winder.animate = False
     _2Winder.output_gcode_to_file = True
     _2Winder.output_gcode_to_microSD = True
 
-    _2Winder.hmtl_filename = 'hmtl/2_Full_4x4'
-    _2Winder.gcode_filename = 'gcode/2_Full_4x4'
-    _2Winder.gcode_filename_SD = 'D:/2_Full_4x4'
+    _2Winder.hmtl_filename = 'hmtl/2_Full_4x4_Row'
+    _2Winder.gcode_filename = 'gcode/2_Full_4x4_Row'
+    _2Winder.gcode_filename_SD = 'D:/2_Full_4x4_Row'
 
     steps = []
 
@@ -167,18 +167,26 @@ def FULL_4x4():  # full wind to test board when it is ready
     jss.move_in_line(steps, x, y, h+p*2, F)  # move up to first nail and just off grid surface
     jss.pause(steps, 30)
 
-    first = 1
-    last = 4
-    for core in range(first, last+1):
-        rotation = 'ccw' if core % 2 == 0 else 'cw'
+    first = 1  # NOTE following code is hard coded 
+    last = 16  # NOTE following code is hard coded  
+    for core in [1,5,9,13,2,6,10,14,3,7,11,15,4,8,12,16]:  #range(first, last+1):    # NOTE following code is hard coded
+        isOdd = True if core % 2 == 1 else False
+        rotation = 'cw' if isOdd else 'ccw'
         plunge_slot(steps, core)
         _, final_pos = wind_chore(steps, core, 'x+', rotation)
         if core == last:
-            x, y, z = jss.move_in_line(steps, final_pos[0], final_pos[1], z+10, F)  # move up and end
+            jss.move_in_line(steps, final_pos[0], final_pos[1], final_pos[2]+10, F)  # move up and end
             break
-        if core % 4 == 0: 
-            x, y, z = jss.move_in_line(steps, final_pos[0]+r, final_pos[1], final_pos[2], VF)  # position between rows
-            jss.move_in_line(steps, x, y+nn, final_pos[2], S)  # increase y between rows of cores
+        elif core in [13, 14, 15, 16]:  # NOTE following code is hard coded
+            jss.move_in_line(steps, final_pos[0], final_pos[1], final_pos[2]+10, F)  # move up and end
+            break  # NOTE right now the code only does row by row
+        else:
+            if isOdd:
+                x, y, z = jss.move_in_line(steps, final_pos[0]-r, final_pos[1], final_pos[2], VF)# move outside of row
+                jss.move_in_line(steps, x, y+nn, z, VF)# move up to next row
+            elif not isOdd:
+                x, y, z = jss.move_in_line(steps, final_pos[0]+r, final_pos[1], final_pos[2], VF)# move outside of row
+                jss.move_in_line(steps, x, y+nn, z, VF)# move up to next row
         
     VISUALIZE_AND_COMPILE(steps, _2Winder.animate, frame_step=2)
 
@@ -186,8 +194,8 @@ def FULL_4x4():  # full wind to test board when it is ready
 
 if __name__ == '__main__':
     
-    # ARC_DEMO()
+    # ARC_DEMO()  
     # MISS_NAILS()  # WORKED!!
     # SLOT_TEST()  # WORKED!!
     # WIND_TEST_4x4()  # SEEMED TO WORK!!
-    FULL_4x4()
+    FULL_4x4_ROW()
